@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <title>Editor de Moldes</title>
+  <style>
+    body { font-family: Arial, sans-serif; text-align: center; padding: 2rem; }
+    button { margin: 1rem; padding: 0.5rem 1rem; font-size: 1rem; }
+    img { max-width: 300px; margin: 1rem; border: 1px solid #ccc; }
+    .preview-container { display: flex; justify-content: center; gap: 2rem; flex-wrap: wrap; }
+  </style>
+</head>
+<body>
+  <h1>Editor de Moldes con Diseño</h1>
+  <input type="file" id="moldeInput" accept="image/*" hidden />
+  <input type="file" id="disenoInput" accept="image/*" hidden />
+  <button onclick="document.getElementById('moldeInput').click()">Seleccionar Molde</button>
+  <button onclick="document.getElementById('disenoInput').click()">Seleccionar Diseño</button>
+  <button onclick="procesar()">Generar Imagen</button>
+
+  <div class="preview-container">
+    <div>
+      <h3>Molde</h3>
+      <img id="moldePreview" src="" alt="Molde" />
+    </div>
+    <div>
+      <h3>Diseño</h3>
+      <img id="disenoPreview" src="" alt="Diseño" />
+    </div>
+  </div>
+
+  <div id="resultado"></div>
+
+  <script>
+    document.getElementById('moldeInput').addEventListener('change', async e => {
+      const file = e.target.files[0];
+      const form = new FormData();
+      form.append('molde', file);
+      await fetch('/subir-molde', { method: 'POST', body: form });
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        document.getElementById('moldePreview').src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    document.getElementById('disenoInput').addEventListener('change', async e => {
+      const file = e.target.files[0];
+      const form = new FormData();
+      form.append('diseno', file);
+      await fetch('/subir-diseno', { method: 'POST', body: form });
+
+      const reader = new FileReader();
+      reader.onload = () => {
+        document.getElementById('disenoPreview').src = reader.result;
+      };
+      reader.readAsDataURL(file);
+    });
+
+    async function procesar() {
+      const res = await fetch('/procesar');
+      const data = await res.json();
+      if (data.success) {
+        const imgURL = data.path;
+        document.getElementById('resultado').innerHTML = `
+          <h2>Imagen Generada:</h2>
+          <img src="${imgURL}" />
+          <br/>
+          <a href="${imgURL}" download="modelo_con_diseño.png">
+            <button>Descargar Imagen</button>
+          </a>
+        `;
+      } else {
+        alert("Error: " + data.error);
+      }
+    }
+  </script>
+</body>
+</html>
